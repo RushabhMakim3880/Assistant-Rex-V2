@@ -27,10 +27,17 @@ A stunning, sci-fi inspired interface built with **Electron + React**.
 ### 📱 R.E.X. Companion App (Flutter)
 Extend R.E.X. beyond your desk with the custom Android Companion App.
 *   **Two-Way Voice Streaming:** Talk to R.E.X. from anywhere in your house via your phone.
+*   **Secretary Mode:** R.E.X. can answer your phone calls for you, take messages, and even decide if a call is urgent enough to patch through.
 *   **Mobile Vision ("Eye"):** Stream your phone's camera to R.E.X. to show it objects in the real world ("What is this part?").
 *   **Remote Control:** Launch desktop apps, control media, and manage system volume from your phone.
 *   **File Beam:** Instantly transfer files between your phone and desktop with a gesture.
+*   **Universal Clipboard:** Copy text on your desktop, paste it on your phone (and vice-versa).
 *   **Contact Sync & Messaging:** Ask R.E.X. to "Text John on WhatsApp" using your phone's native capabilities.
+
+### 🗂️ Intelligent Project Management
+R.E.X. doesn't just do tasks; it organizes them.
+*   **Project Context:** Create and switch between projects. R.E.X. remembers where files are stored for each specific project.
+*   **Auto-Logging:** All user interactions and key events are logged to the project's history.
 
 ### 🏠 Physical World Agency
 R.E.X. isn't stuck in the box.
