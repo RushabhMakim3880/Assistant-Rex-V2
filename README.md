@@ -108,7 +108,7 @@ A fully native extension of the AI.
 ## � Installation
 
 ### Prerequisites
-*   **Windows 10/11** (Linux/Mac support planned)
+*   **Windows 10/11** or **Linux** (Kali Linux Fully Supported)
 *   **Python 3.10+**
 *   **Node.js 18+**
 *   **Android Device** (Android 10+)
