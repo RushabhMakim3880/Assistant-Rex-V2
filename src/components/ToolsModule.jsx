@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mic, MicOff, Settings, Power, Video, VideoOff, Hand, Lightbulb, Printer, Globe, Box, Smartphone } from 'lucide-react';
+import { Mic, MicOff, Settings, Power, Video, VideoOff, Hand, Smartphone } from 'lucide-react';
 
 const ToolsModule = ({
     isConnected,
@@ -13,17 +13,8 @@ const ToolsModule = ({
     onToggleSettings,
 
     onToggleHand,
-    onToggleKasa,
-    showKasaWindow,
-    onTogglePrinter,
-    showPrinterWindow,
-    onToggleCad,
-    showCadWindow,
-    onToggleBrowser,
-    showBrowserWindow,
     onToggleMobile,
     showMobileConnect,
-    activeDragElement,
 
     position,
     onMouseDown
@@ -32,8 +23,8 @@ const ToolsModule = ({
         <div
             id="tools"
             onMouseDown={onMouseDown}
-            className={`absolute px-6 py-3 transition-all duration-200 
-                        backdrop-blur-xl bg-black/40 border border-white/10 shadow-2xl rounded-full`}
+            className={`absolute px-4 py-3 transition-all duration-300 
+                        glass-panel rounded-full flex gap-4 items-center`}
             style={{
                 left: position.x,
                 top: position.y,
@@ -41,76 +32,82 @@ const ToolsModule = ({
                 pointerEvents: 'auto'
             }}
         >
-            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-5 pointer-events-none mix-blend-overlay rounded-full"></div>
+            {/* Power Button */}
+            <button
+                onClick={onTogglePower}
+                className={`p-3 glass-button ${isConnected
+                    ? 'text-green-400 bg-green-500/10 shadow-[0_0_15px_rgba(74,222,128,0.2)]'
+                    : 'text-gray-500'
+                    } `}
+                title="System Power"
+            >
+                <Power size={20} />
+            </button>
 
-            <div className="flex justify-center gap-6 relative z-10">
-                {/* Power Button */}
-                <button
-                    onClick={onTogglePower}
-                    className={`p-3 rounded-full border-2 transition-all duration-300 ${isConnected
-                        ? 'border-green-500 bg-green-500/10 text-green-500 hover:bg-green-500/20 shadow-[0_0_15px_rgba(34,197,94,0.3)]'
-                        : 'border-gray-600 bg-gray-600/10 text-gray-500 hover:bg-gray-600/20'
-                        } `}
-                >
-                    <Power size={24} />
-                </button>
+            <div className="w-px h-8 bg-white/10 mx-1"></div>
 
-                {/* Mute Button */}
-                <button
-                    onClick={onToggleMute}
-                    disabled={!isConnected}
-                    className={`p-3 rounded-full border-2 transition-all duration-300 ${!isConnected
-                        ? 'border-gray-800 text-gray-800 cursor-not-allowed'
-                        : isMuted
-                            ? 'border-red-500 bg-red-500/10 text-red-500 hover:bg-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.3)]'
-                            : 'border-cyan-500 bg-cyan-500/10 text-cyan-500 hover:bg-cyan-500/20 shadow-[0_0_15px_rgba(6,182,212,0.3)]'
-                        } `}
-                >
-                    {isMuted ? <MicOff size={24} /> : <Mic size={24} />}
-                </button>
+            {/* Mute Button */}
+            <button
+                onClick={onToggleMute}
+                disabled={!isConnected}
+                className={`p-3 glass-button ${!isConnected
+                    ? 'opacity-50 cursor-not-allowed'
+                    : isMuted
+                        ? 'text-red-400 bg-red-500/10'
+                        : 'text-cyan-400 bg-cyan-500/10 shadow-[0_0_15px_rgba(34,211,238,0.2)]'
+                    } `}
+                title="Microphone"
+            >
+                {isMuted ? <MicOff size={20} /> : <Mic size={20} />}
+            </button>
 
-                {/* Video Button */}
-                <button
-                    onClick={onToggleVideo}
-                    className={`p-3 rounded-full border-2 transition-all duration-300 ${isVideoOn
-                        ? 'border-purple-500 bg-purple-500/10 text-purple-500 hover:bg-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.3)]'
-                        : 'border-cyan-900 text-cyan-700 hover:border-cyan-500 hover:text-cyan-500'
-                        } `}
-                >
-                    {isVideoOn ? <Video size={24} /> : <VideoOff size={24} />}
-                </button>
+            {/* Video Button */}
+            <button
+                onClick={onToggleVideo}
+                className={`p-3 glass-button ${isVideoOn
+                    ? 'text-purple-400 bg-purple-500/10 shadow-[0_0_15px_rgba(192,132,252,0.2)]'
+                    : 'text-gray-400'
+                    } `}
+                title="Camera Vision"
+            >
+                {isVideoOn ? <Video size={20} /> : <VideoOff size={20} />}
+            </button>
 
-                {/* Settings Button */}
-                <button
-                    onClick={onToggleSettings}
-                    className={`p-3 rounded-full border-2 transition-all ${showSettings ? 'border-cyan-400 text-cyan-400 bg-cyan-900/20' : 'border-cyan-900 text-cyan-700 hover:border-cyan-500 hover:text-cyan-500'
-                        } `}
-                >
-                    <Settings size={24} />
-                </button>
+            {/* Hand Tracking Toggle */}
+            <button
+                onClick={onToggleHand}
+                className={`p-3 glass-button ${isHandTrackingEnabled
+                    ? 'text-orange-400 bg-orange-500/10 shadow-[0_0_15px_rgba(251,146,60,0.2)]'
+                    : 'text-gray-400'
+                    } `}
+                title="Gesture Control"
+            >
+                <Hand size={20} />
+            </button>
 
-                {/* Hand Tracking Toggle */}
-                <button
-                    onClick={onToggleHand}
-                    className={`p-3 rounded-full border-2 transition-all duration-300 ${isHandTrackingEnabled
-                        ? 'border-orange-500 bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 shadow-[0_0_15px_rgba(249,115,22,0.3)]'
-                        : 'border-cyan-900 text-cyan-700 hover:border-cyan-500 hover:text-cyan-500'
-                        } `}
-                >
-                    <Hand size={24} />
-                </button>
+            <div className="w-px h-8 bg-white/10 mx-1"></div>
 
-                {/* Mobile Connect Toggle */}
-                <button
-                    onClick={onToggleMobile}
-                    className={`p-3 rounded-full border-2 transition-all duration-300 ${showMobileConnect
-                        ? 'border-indigo-400 bg-indigo-400/10 text-indigo-400 hover:bg-indigo-400/20 shadow-[0_0_15px_rgba(129,140,248,0.3)]'
-                        : 'border-cyan-900 text-cyan-700 hover:border-indigo-500 hover:text-indigo-500'
-                        } `}
-                >
-                    <Smartphone size={24} />
-                </button>
-            </div>
+            {/* Mobile Connect Toggle */}
+            <button
+                onClick={onToggleMobile}
+                className={`p-3 glass-button relative ${showMobileConnect
+                    ? 'text-indigo-400 bg-indigo-500/10'
+                    : 'text-gray-400'
+                    } `}
+                title="Mobile Companion"
+            >
+                {showMobileConnect && <span className="absolute top-0 right-0 w-2 h-2 bg-indigo-400 rounded-full animate-ping" />}
+                <Smartphone size={20} />
+            </button>
+
+            {/* Settings Button */}
+            <button
+                onClick={onToggleSettings}
+                className={`p-3 glass-button ${showSettings ? 'text-cyan-400 bg-cyan-500/10' : 'text-gray-400'}`}
+                title="Settings"
+            >
+                <Settings size={20} />
+            </button>
         </div>
     );
 };

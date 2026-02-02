@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { Send } from 'lucide-react';
 
 const ChatModule = ({
     messages,
@@ -8,7 +9,7 @@ const ChatModule = ({
     isModularMode,
     activeDragElement,
     position,
-    width = 672, // default max-w-2xl
+    width = 600,
     height,
     onMouseDown
 }) => {
@@ -26,9 +27,8 @@ const ChatModule = ({
         <div
             id="chat"
             onMouseDown={onMouseDown}
-            className={`absolute px-6 py-4 pointer-events-auto transition-all duration-200 
-            backdrop-blur-xl bg-black/40 border border-white/10 shadow-2xl rounded-2xl
-            ${isModularMode ? (activeDragElement === 'chat' ? 'ring-2 ring-green-500' : 'ring-1 ring-yellow-500/30') : ''}
+            className={`absolute pointer-events-auto transition-all duration-300
+            ${isModularMode ? (activeDragElement === 'chat' ? 'ring-1 ring-white/20' : 'ring-1 ring-transparent') : ''}
         `}
             style={{
                 left: position.x,
@@ -38,32 +38,50 @@ const ChatModule = ({
                 height: height
             }}
         >
-            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-5 pointer-events-none mix-blend-overlay"></div>
-
+            {/* Messages Area - No Container Background (Truly Floating) */}
             <div
-                className="flex flex-col gap-3 overflow-y-auto mb-4 scrollbar-hide mask-image-gradient relative z-10"
+                className="flex flex-col gap-4 overflow-y-auto mb-4 scrollbar-hide mask-image-gradient relative z-10 px-4"
                 style={{ height: height ? `calc(${height}px - 70px)` : '15rem' }}
             >
                 {messages.slice(-5).map((msg, i) => (
-                    <div key={i} className="text-sm border-l-2 border-cyan-800/50 pl-3 py-1">
-                        <span className="text-cyan-600 font-mono text-xs opacity-70">[{msg.time}]</span> <span className="font-bold text-cyan-300 drop-shadow-sm">{msg.sender}</span>
-                        <div className="text-gray-300 mt-1 leading-relaxed">{msg.text}</div>
+                    <div key={i} className={`flex flex-col ${msg.sender === 'User' ? 'items-end' : 'items-start'}`}>
+                        <div className={`
+                            max-w-[90%] px-5 py-3 rounded-2xl backdrop-blur-md text-sm leading-relaxed shadow-lg
+                            ${msg.sender === 'User'
+                                ? 'bg-white/10 text-white rounded-br-none border border-white/10'
+                                : 'bg-black/40 text-gray-200 rounded-bl-none border border-white/5'}
+                        `}>
+                            {msg.text}
+                        </div>
+                        <span className="text-[10px] text-white/20 mt-1 px-2 font-light tracking-wider uppercase">
+                            {msg.sender} • {msg.time}
+                        </span>
                     </div>
                 ))}
                 <div ref={messagesEndRef} />
             </div>
 
-            <div className="flex gap-2 relative z-10 absolute bottom-4 left-6 right-6">
-                <input
-                    type="text"
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyDown={handleSend}
-                    placeholder="INITIALIZE COMMAND..."
-                    className="flex-1 bg-black/40 border border-cyan-700/30 rounded-lg p-3 text-cyan-50 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 transition-all placeholder-cyan-800/50 backdrop-blur-sm"
-                />
+            {/* Input Area - Floating Capsule */}
+            <div className="absolute bottom-0 left-0 right-0 px-4">
+                <div className="glass-panel rounded-full flex items-center p-1 pl-5">
+                    <input
+                        type="text"
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        onKeyDown={handleSend}
+                        placeholder="Ask R.E.X..."
+                        className="flex-1 bg-transparent border-none text-white focus:ring-0 placeholder-white/20 text-sm font-light focus:outline-none"
+                    />
+                    <button
+                        onClick={() => handleSend({ key: 'Enter' })}
+                        className="p-2 glass-button text-white/50 hover:text-cyan-400"
+                    >
+                        <Send size={16} />
+                    </button>
+                </div>
             </div>
-            {isModularMode && <div className={`absolute -top-6 left-0 text-xs font-bold tracking-widest ${activeDragElement === 'chat' ? 'text-green-500' : 'text-yellow-500/50'}`}>CHAT MODULE</div>}
+
+            {isModularMode && <div className="absolute -top-6 left-0 text-[10px] tracking-widest text-white/20 uppercase">Chat Module</div>}
         </div>
     );
 };

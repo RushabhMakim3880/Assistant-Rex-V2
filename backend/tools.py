@@ -568,5 +568,24 @@ tools_list = [{"function_declarations": [
     mobile_audio_control_tool,
     mobile_location_tool,
     mobile_vision_tool,
-    mobile_file_beam_tool
+    mobile_file_beam_tool,
+    # Security Tools
+    {
+        "name": "run_security_tool",
+        "description": "Run a security/pentesting tool (nmap, netstat, whois) or a shell command. Use this for 'scan this IP', 'check open ports', or 'run command'.",
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "tool": {
+                    "type": "STRING",
+                    "description": "The tool to run: 'nmap', 'netstat', 'whois', 'shell'."
+                },
+                "args": {
+                    "type": "STRING",
+                    "description": "Arguments for the tool (e.g., target IP for nmap, command string for shell)."
+                }
+            },
+            "required": ["tool", "args"]
+        }
+    }
 ]}]

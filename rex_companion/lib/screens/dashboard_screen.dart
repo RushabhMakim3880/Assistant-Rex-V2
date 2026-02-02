@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -7,6 +8,7 @@ import '../services/telephony_service.dart';
 import '../services/status_service.dart';
 import '../services/file_service.dart';
 import 'connection_screen.dart';
+import 'settings_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -18,6 +20,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen>
     with TickerProviderStateMixin {
   late AnimationController _pulseController;
+  late AnimationController _rotateController;
 
   @override
   void initState() {
@@ -26,6 +29,11 @@ class _DashboardScreenState extends State<DashboardScreen>
       vsync: this,
       duration: const Duration(seconds: 4),
     )..repeat(reverse: true);
+
+    _rotateController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 10),
+    )..repeat();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<TelephonyService>(
@@ -38,6 +46,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   @override
   void dispose() {
     _pulseController.dispose();
+    _rotateController.dispose();
     super.dispose();
   }
 
@@ -62,27 +71,42 @@ class _DashboardScreenState extends State<DashboardScreen>
     }
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: const Color(0xFF050510),
       body: Stack(
         children: [
-          // Background Glow
+          // 1. Ambient Background Gradient
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF050510),
+                    Color(0xFF0F172A),
+                    Color(0xFF000000),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // 2. Animated Glow Orbs
           AnimatedBuilder(
             animation: _pulseController,
             builder: (context, child) {
               return Positioned(
                 top: -100,
-                right: -100,
+                right: -50,
                 child: Container(
-                  width: 400,
-                  height: 400,
+                  width: 300,
+                  height: 300,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: const Color(
-                      0xFF22D3EE,
-                    ).withValues(alpha: 0.05 + (_pulseController.value * 0.05)),
+                    color: const Color(0xFF22D3EE).withOpacity(0.15),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF22D3EE).withValues(alpha: 0.1),
+                        color: const Color(0xFF22D3EE).withOpacity(0.2),
                         blurRadius: 100,
                         spreadRadius: 20,
                       ),
@@ -92,7 +116,27 @@ class _DashboardScreenState extends State<DashboardScreen>
               );
             },
           ),
+          Positioned(
+            bottom: -150,
+            left: -50,
+            child: Container(
+              width: 400,
+              height: 400,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFF6366F1).withOpacity(0.1),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF6366F1).withOpacity(0.1),
+                    blurRadius: 120,
+                    spreadRadius: 10,
+                  ),
+                ],
+              ),
+            ),
+          ),
 
+          // 3. Content
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(
@@ -102,72 +146,68 @@ class _DashboardScreenState extends State<DashboardScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // App Bar
-                  Row(
-                    children: [
-                      FadeInLeft(
-                        child: Text(
-                          "R.E.X. CORE",
-                          style: GoogleFonts.shareTechMono(
-                            color: const Color(0xFF22D3EE),
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 2,
-                          ),
-                        ),
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.power_settings_new,
-                          color: Colors.redAccent,
-                        ),
-                        onPressed: () => socketService.disconnect(),
-                      ),
-                    ],
+                  // Header
+                  _buildHeader(socketService),
+                  const SizedBox(height: 30),
+
+                  // Core Visualization
+                  Center(
+                    child: _buildCoreVisualizer(
+                      statusService.activeTools.isNotEmpty,
+                    ),
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 40),
 
-                  // Status Header
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF22D3EE).withValues(alpha: 0.05),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: const Color(0xFF22D3EE).withValues(alpha: 0.2),
-                      ),
-                    ),
-                    child: Stack(
+                  // Status / Logs
+                  _buildGlassCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Scanline effect on high-priority status
-                        if (statusService.activeTools.isNotEmpty)
-                          Positioned.fill(
-                            child: CustomPaint(
-                              painter: ScanlinePainter(_pulseController.value),
-                            ),
+                        Text(
+                          "SYSTEM STATUS",
+                          style: GoogleFonts.outfit(
+                            color: Colors.white70,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 1.5,
                           ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
                           children: [
-                            Text(
-                              "ACTIVITY STATUS",
-                              style: GoogleFonts.shareTechMono(
-                                color: const Color(
-                                  0xFF22D3EE,
-                                ).withValues(alpha: 0.5),
-                                fontSize: 12,
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: statusService.activeTools.isNotEmpty
+                                    ? const Color(0xFF22D3EE)
+                                    : Colors.grey,
+                                boxShadow: statusService.activeTools.isNotEmpty
+                                    ? [
+                                        const BoxShadow(
+                                          color: Color(0xFF22D3EE),
+                                          blurRadius: 10,
+                                          spreadRadius: 2,
+                                        ),
+                                      ]
+                                    : [],
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              statusService.currentStatus.toUpperCase(),
-                              style: GoogleFonts.shareTechMono(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                statusService.activeTools.isNotEmpty
+                                    ? "EXECUTING: ${statusService.activeTools.last.toUpperCase()}"
+                                    : statusService.currentStatus.toUpperCase(),
+                                style: GoogleFonts.shareTechMono(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
@@ -176,216 +216,56 @@ class _DashboardScreenState extends State<DashboardScreen>
                     ),
                   ),
 
-                  const SizedBox(height: 24),
+                  const Spacer(),
 
-                  // Central Reactive Visualizer
-                  Center(
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        // Background Glow Pulse
-                        AnimatedBuilder(
-                          animation: _pulseController,
-                          builder: (context, child) {
-                            return Container(
-                              width: 180 + (_pulseController.value * 20),
-                              height: 180 + (_pulseController.value * 20),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: const Color(
-                                  0xFF22D3EE,
-                                ).withValues(alpha: 0.05),
-                                border: Border.all(
-                                  color: const Color(
-                                    0xFF22D3EE,
-                                  ).withValues(alpha: 0.1),
-                                  width: 1,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                        // Rotating/Scanning Ring
-                        RotationTransition(
-                          turns: _pulseController,
-                          child: Container(
-                            width: 150,
-                            height: 150,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: const Color(
-                                  0xFF22D3EE,
-                                ).withValues(alpha: 0.3),
-                                width: 2,
-                                style: BorderStyle.none, // Hide plain border
-                              ),
-                            ),
-                            child: CustomPaint(painter: RingPainter()),
-                          ),
-                        ),
-                        // Core Icon
-                        Pulse(
-                          infinite: true,
-                          duration: const Duration(seconds: 2),
-                          child: Container(
-                            width: 100,
-                            height: 100,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: const Color(
-                                0xFF22D3EE,
-                              ).withValues(alpha: 0.1),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(
-                                    0xFF22D3EE,
-                                  ).withValues(alpha: 0.2),
-                                  blurRadius: 20,
-                                  spreadRadius: 5,
-                                ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.api_outlined,
-                              size: 48,
-                              color: Color(0xFF22D3EE),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Execution Log (Activity Mirroring)
+                  // Actions Grid
                   Text(
-                    "REAL-TIME LOG",
-                    style: GoogleFonts.shareTechMono(
-                      color: Colors.white.withValues(alpha: 0.4),
+                    "QUICK ACTIONS",
+                    style: GoogleFonts.outfit(
+                      color: Colors.white54,
                       fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1.2,
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  Container(
-                    height: 120,
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.03),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.05),
-                      ),
-                    ),
-                    child: statusService.activeTools.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.blur_on,
-                                  color: const Color(
-                                    0xFF22D3EE,
-                                  ).withValues(alpha: 0.2),
-                                  size: 32,
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  "SYSTEM IDLE",
-                                  style: GoogleFonts.shareTechMono(
-                                    color: Colors.white.withValues(alpha: 0.2),
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        : ListView.builder(
-                            itemCount: statusService.activeTools.length,
-                            itemBuilder: (context, index) {
-                              return FadeIn(
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 4.0,
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Pulse(
-                                        infinite: true,
-                                        child: const Icon(
-                                          Icons.circle,
-                                          color: Color(0xFF22D3EE),
-                                          size: 8,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        "EXECUTING: ${statusService.activeTools[index]}",
-                                        style: GoogleFonts.shareTechMono(
-                                          color: const Color(0xFF22D3EE),
-                                          fontSize: 13,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                  ),
+                  const SizedBox(height: 16),
 
-                  const SizedBox(height: 32),
-
-                  // Actions
-                  Text(
-                    "REMOTE TOOLS",
-                    style: GoogleFonts.shareTechMono(
-                      color: Colors.white.withValues(alpha: 0.4),
-                      fontSize: 12,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
                   Expanded(
+                    flex: 2,
                     child: GridView.count(
                       crossAxisCount: 2,
                       mainAxisSpacing: 16,
                       crossAxisSpacing: 16,
+                      childAspectRatio: 1.4,
                       children: [
-                        _buildActionButton(
+                        _buildActionCard(
                           "FILE BEAM",
-                          Icons.send_to_mobile,
+                          Icons.upload_file,
                           () => fileService.pickAndSendFile(),
+                          color: const Color(0xFF22D3EE),
                         ),
-                        _buildActionButton("CAMERA POV", Icons.visibility, () {
-                          // Quick toggle logic could go here or show a preview
+                        _buildActionCard("CAMERA", Icons.camera_alt, () {
+                          // This is actually triggered by voice usually, but we can add manual logic here later
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text("Camera controlled by REX."),
+                              content: Text(
+                                "Camera controlled by Voice Command on Desktop",
+                              ),
                             ),
                           );
-                        }),
-                        _buildStatusCard(
-                          "TELEPHONY",
-                          "READY",
-                          Icons.phone_android,
-                        ),
-                        _buildStatusCard(
-                          "LOCATION",
-                          "ACTIVE",
-                          Icons.location_on,
-                        ),
+                        }, color: const Color(0xFFA5F3FC)),
+                        _buildStatusTile("TELEPHONY", "READY", Icons.phone),
+                        _buildStatusTile("GPS", "ACTIVE", Icons.location_on),
                       ],
                     ),
                   ),
 
-                  // Footer
+                  const SizedBox(height: 10),
                   Center(
                     child: Text(
-                      "REX COMPANION v1.2 | PHASE 4 ACTIVE",
+                      "CONNECTED TO ADA V2 CORE",
                       style: GoogleFonts.shareTechMono(
-                        color: Colors.white.withValues(alpha: 0.2),
+                        color: Colors.white30,
                         fontSize: 10,
                       ),
                     ),
@@ -399,74 +279,206 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  Widget _buildActionButton(String label, IconData icon, VoidCallback onTap) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.all(16),
+  Widget _buildHeader(SocketService socketService) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: const Color(0xFF22D3EE).withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: const Color(0xFF22D3EE).withValues(alpha: 0.2),
-            ),
+            color: const Color(0xFF22D3EE).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: const Color(0xFF22D3EE), size: 32),
-              const SizedBox(height: 12),
-              Text(
-                label,
-                style: GoogleFonts.shareTechMono(
-                  color: const Color(0xFF22D3EE),
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
+          child: const Icon(Icons.hub, color: Color(0xFF22D3EE), size: 24),
+        ),
+        const SizedBox(width: 16),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "R.E.X. COMPANION",
+              style: GoogleFonts.outfit(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1,
+              ),
+            ),
+            Text(
+              "Remote Uplink Active",
+              style: GoogleFonts.outfit(
+                color: const Color(0xFF22D3EE),
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+        const Spacer(),
+        IconButton(
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const SettingsScreen()),
+          ),
+          icon: const Icon(Icons.settings, color: Color(0xFF22D3EE)),
+        ),
+        IconButton(
+          onPressed: () => socketService.disconnect(),
+          icon: const Icon(Icons.power_settings_new, color: Colors.redAccent),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCoreVisualizer(bool isActive) {
+    return SizedBox(
+      height: 220,
+      width: 220,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Outer Rotating Ring
+          RotationTransition(
+            turns: _rotateController,
+            child: Container(
+              width: 200,
+              height: 200,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: const Color(0xFF22D3EE).withOpacity(0.2),
+                  width: 1,
                 ),
               ),
-            ],
+              child: CustomPaint(painter: ArcPainter()),
+            ),
           ),
+
+          // Middle Pulse
+          AnimatedBuilder(
+            animation: _pulseController,
+            builder: (context, child) {
+              return Container(
+                width: 140 + (_pulseController.value * 20),
+                height: 140 + (_pulseController.value * 20),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFF22D3EE).withOpacity(0.05),
+                  border: Border.all(
+                    color: const Color(0xFF22D3EE).withOpacity(0.3),
+                    width: 1.5,
+                  ),
+                ),
+              );
+            },
+          ),
+
+          // Inner Core
+          Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: isActive
+                    ? [const Color(0xFF22D3EE), const Color(0xFF0F172A)]
+                    : [Colors.white10, Colors.black],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: isActive
+                      ? const Color(0xFF22D3EE).withOpacity(0.4)
+                      : Colors.transparent,
+                  blurRadius: 30,
+                  spreadRadius: 5,
+                ),
+              ],
+            ),
+            child: Icon(
+              isActive ? Icons.graphic_eq : Icons.mic_none,
+              color: Colors.white,
+              size: 40,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGlassCard({required Widget child}) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+          ),
+          child: child,
         ),
       ),
     );
   }
 
-  Widget _buildStatusCard(String title, String status, IconData icon) {
+  Widget _buildActionCard(
+    String title,
+    IconData icon,
+    VoidCallback onTap, {
+    required Color color,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: color.withOpacity(0.3), width: 1),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 28),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              style: GoogleFonts.shareTechMono(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusTile(String title, String status, IconData icon) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.02),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        color: Colors.white.withOpacity(0.03),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: Colors.white.withValues(alpha: 0.2), size: 24),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: GoogleFonts.shareTechMono(
-                  color: Colors.white.withValues(alpha: 0.3),
-                  fontSize: 10,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                status,
-                style: GoogleFonts.shareTechMono(
-                  color: Colors.white.withValues(alpha: 0.6),
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
+          Icon(icon, color: Colors.white30, size: 20),
+          const SizedBox(height: 8),
+          Text(
+            title,
+            style: GoogleFonts.outfit(color: Colors.white54, fontSize: 10),
+          ),
+          Text(
+            status,
+            style: GoogleFonts.shareTechMono(
+              color: const Color(0xFF4ADE80),
+              fontSize: 12,
+            ),
           ),
         ],
       ),
@@ -474,62 +486,21 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 }
 
-class ScanlinePainter extends CustomPainter {
-  final double progress;
-  ScanlinePainter(this.progress);
-
+class ArcPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFF22D3EE).withValues(alpha: 0.1)
-      ..strokeWidth = 1.0;
+      ..color = const Color(0xFF22D3EE).withOpacity(0.5)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round;
 
-    double y = size.height * progress;
-    canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
 
-    // Multiple faint lines
-    canvas.drawLine(
-      Offset(0, (y + 10) % size.height),
-      Offset(size.width, (y + 10) % size.height),
-      paint,
-    );
-    canvas.drawLine(
-      Offset(0, (y - 10) % size.height),
-      Offset(size.width, (y - 10) % size.height),
-      paint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant ScanlinePainter oldDelegate) => true;
-}
-
-class RingPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFF22D3EE).withValues(alpha: 0.3)
-      ..strokeWidth = 2.0
-      ..style = PaintingStyle.stroke;
-
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2;
-
-    // Draw partial arcs for a holographic ring effect
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      0,
-      1.5,
-      false,
-      paint,
-    );
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      3.14,
-      1.5,
-      false,
-      paint,
-    );
+    // Draw 3 random arcs
+    canvas.drawArc(rect, 0, 1.5, false, paint);
+    canvas.drawArc(rect, 2.5, 0.5, false, paint);
+    canvas.drawArc(rect, 4, 1.2, false, paint);
   }
 
   @override

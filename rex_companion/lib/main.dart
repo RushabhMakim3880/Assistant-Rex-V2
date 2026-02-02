@@ -64,16 +64,17 @@ class RexCompanionApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: Colors.black,
+        scaffoldBackgroundColor: const Color(0xFF050510), // Deep Black/Blue
         primaryColor: const Color(0xFF22D3EE),
         colorScheme: const ColorScheme.dark(
           primary: Color(0xFF22D3EE),
           secondary: Color(0xFF06B6D4),
-          surface: Colors.black,
+          surface: Color(0x1FFFFFFF), // Glass White
+          background: Color(0xFF050510),
         ),
         textTheme: GoogleFonts.shareTechMonoTextTheme(
           Theme.of(context).textTheme.apply(
-            bodyColor: const Color(0xFF22D3EE),
+            bodyColor: const Color(0xFFE2E8F0),
             displayColor: const Color(0xFF22D3EE),
           ),
         ),

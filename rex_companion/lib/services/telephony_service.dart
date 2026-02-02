@@ -25,6 +25,7 @@ class TelephonyService {
       Map<Permission, PermissionStatus> statuses = await [
         Permission.phone,
         Permission.microphone,
+        Permission.camera,
       ].request();
 
       status = statuses[Permission.phone]!;
@@ -168,12 +169,22 @@ class TelephonyService {
         }
       });
 
-      socketService.socket?.on('mobile:camera_control', (data) {
+      socketService.socket?.on('mobile:camera_control', (data) async {
         if (data is Map && data['action'] != null) {
           if (data['action'] == 'start') {
-            cameraService.initialize().then(
-              (_) => cameraService.startStreaming(),
-            );
+            // Dynamic Permission Check
+            var status = await Permission.camera.status;
+            if (!status.isGranted) {
+              status = await Permission.camera.request();
+            }
+
+            if (status.isGranted) {
+              cameraService.initialize().then(
+                (_) => cameraService.startStreaming(),
+              );
+            } else {
+              debugPrint("Camera permission denied.");
+            }
           } else {
             cameraService.stopStreaming();
           }

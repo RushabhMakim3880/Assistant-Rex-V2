@@ -172,7 +172,7 @@ async def get_network_info():
 @sio.event
 async def connect(sid, environ):
     print(f"Client connected: {sid}")
-    await sio.emit('status', {'msg': 'Connected to A.D.A Backend'}, room=sid)
+    await sio.emit('status', {'msg': 'Connected to R.E.X Backend'}, room=sid)
 
     global authenticator
     
@@ -265,6 +265,18 @@ def cb_on_mobile_command(event, args=None):
     print(f"Sending Mobile Command: {event}")
     asyncio.create_task(sio.emit(event, args or {}))
 
+def cb_broadcast_mobile_video(frame_data):
+    # Determine if it's already b64 or bytes
+    if isinstance(frame_data, bytes):
+        import base64
+        b64_data = base64.b64encode(frame_data).decode('utf-8')
+    else:
+        b64_data = frame_data
+        
+    # Broadcast to frontend
+    # print(f"[SERVER] Emitting mobile:video_stream ({len(b64_data)} chars)")
+    asyncio.create_task(sio.emit('mobile:video_stream', {'image': b64_data}))
+
 
 async def init_jarvis(device_index=None, device_name=None, muted=False):
     global audio_loop, loop_task
@@ -292,7 +304,8 @@ async def init_jarvis(device_index=None, device_name=None, muted=False):
             on_device_update=cb_on_device_update,
             on_error=cb_on_error,
             on_mobile_command=cb_on_mobile_command,
-            on_call_ui=cb_broadcast_call_ui, # Added this callback
+            on_call_ui=cb_broadcast_call_ui,
+            on_video_frame=cb_broadcast_mobile_video, # Broadcast mobile camera frames
 
             input_device_index=device_index,
             input_device_name=device_name,
@@ -327,12 +340,12 @@ async def init_jarvis(device_index=None, device_name=None, muted=False):
         print("Emitting 'A.D.A Started'")
         # Broadcast status safely
         try:
-             await sio.emit('status', {'msg': 'A.D.A Started'})
+             await sio.emit('status', {'msg': 'R.E.X Started'})
         except:
              pass 
 
     except Exception as e:
-        print(f"CRITICAL ERROR STARTING ADA: {e}")
+        print(f"CRITICAL ERROR STARTING REX: {e}")
         import traceback
         traceback.print_exc()
         try:
@@ -386,7 +399,7 @@ async def start_audio(sid, data=None):
 
 @sio.event
 async def set_barge_in_prevention(sid, data=None):
-    """Enable or disable barge-in prevention (mute mic while ADA speaks)
+    """Enable or disable barge-in prevention (mute mic while REX speaks)
     
     Args:
         data: dict with 'enabled' (bool) and optional 'threshold' (int, default 2000)
@@ -453,7 +466,7 @@ async def stop_audio(sid):
         audio_loop.stop() 
         print("Stopping Audio Loop")
         audio_loop = None
-        await sio.emit('status', {'msg': 'A.D.A Stopped'})
+        await sio.emit('status', {'msg': 'R.E.X Stopped'})
 
 @sio.event
 async def pause_audio(sid):
@@ -1102,6 +1115,7 @@ async def handle_mobile_location_results(sid, data):
 @sio.on('mobile:camera_frame')
 async def handle_mobile_camera_frame(sid, bytes_data):
     # This is binary JPEG data
+    # print(f"[SERVER] Received mobile:camera_frame ({len(bytes_data) if bytes_data else 0} bytes)")
     if audio_loop and audio_loop.mobile_bridge:
         audio_loop.mobile_bridge.handle_camera_frame(bytes_data)
 

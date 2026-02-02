@@ -164,6 +164,11 @@ function App() {
     const dragOffsetRef = useRef({ x: 0, y: 0 });
     const isDraggingRef = useRef(false);
 
+    // Mobile Video Refs
+    const mobileFrameRef = useRef(null);
+    const lastMobileFrameTimeRef = useRef(0);
+    const [isMobileVideoActive, setIsMobileVideoActive] = useState(false);
+
     // Update refs when state changes
     useEffect(() => {
         isModularModeRef.current = isModularMode;
@@ -440,6 +445,18 @@ function App() {
             }
         });
 
+        socket.on('mobile:video_stream', (data) => {
+            if (data.image) {
+                const img = new Image();
+                img.onload = () => {
+                    mobileFrameRef.current = img;
+                    lastMobileFrameTimeRef.current = Date.now();
+                    setIsMobileVideoActive(true);
+                };
+                img.src = "data:image/jpeg;base64," + data.image;
+            }
+        });
+
         // Handle streaming transcription
         socket.on('transcription', (data) => {
             setMessages(prev => {
@@ -617,7 +634,7 @@ function App() {
                 addMessage('System', `Hand Tracking Error: ${error.message}`);
             }
         };
-        initHandLandmarker();
+        // initHandLandmarker();
 
         return () => {
             socket.off('connect');
@@ -773,15 +790,48 @@ function App() {
         }
 
         // 1. Draw Video to Local Display Canvas (Native Resolution)
+        // 1. Draw Video or Mobile Feed
         const ctx = canvasRef.current.getContext('2d');
+        const width = videoRef.current.videoWidth;
+        const height = videoRef.current.videoHeight;
 
         // Ensure canvas matches video dimensions
-        if (canvasRef.current.width !== videoRef.current.videoWidth || canvasRef.current.height !== videoRef.current.videoHeight) {
-            canvasRef.current.width = videoRef.current.videoWidth;
-            canvasRef.current.height = videoRef.current.videoHeight;
+        if (canvasRef.current.width !== width || canvasRef.current.height !== height) {
+            canvasRef.current.width = width;
+            canvasRef.current.height = height;
         }
 
-        ctx.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
+        // Check for Mobile Feed Timeout (2 seconds)
+        if (isMobileVideoActive && (Date.now() - lastMobileFrameTimeRef.current > 2000)) {
+            setIsMobileVideoActive(false);
+            mobileFrameRef.current = null;
+        }
+
+        if (isMobileVideoActive && mobileFrameRef.current) {
+            // Draw Mobile Frame (scaled to fit)
+            // Draw black background first
+            ctx.fillStyle = "black";
+            ctx.fillRect(0, 0, width, height);
+
+            // Center and Fit
+            const img = mobileFrameRef.current;
+            const scale = Math.min(width / img.width, height / img.height);
+            const w = img.width * scale;
+            const h = img.height * scale;
+            const x = (width - w) / 2;
+            const y = (height - h) / 2;
+
+            ctx.drawImage(img, x, y, w, h);
+
+            // Add "REMOTE LINK" overlay text
+            ctx.font = "20px monospace";
+            ctx.fillStyle = "rgba(0, 255, 255, 0.7)";
+            ctx.fillText("REMOTE LINK ESTABLISHED", 20, 30);
+
+        } else {
+            // Draw Local Webcam
+            ctx.drawImage(videoRef.current, 0, 0, width, height);
+        }
 
         // 2. Send Frame to Backend (Throttled & Resized)
         // Only send if connected
@@ -810,6 +860,7 @@ function App() {
         // 3. Hand Tracking
         let startTimeMs = performance.now();
         // Use Ref for toggle check
+        /*
         if (isHandTrackingEnabledRef.current && handLandmarkerRef.current && videoRef.current.currentTime !== lastVideoTimeRef.current) {
             lastVideoTimeRef.current = videoRef.current.currentTime;
             const results = handLandmarkerRef.current.detectForVideo(videoRef.current, startTimeMs);
@@ -852,7 +903,6 @@ function App() {
                 const targetY = normY * window.innerHeight;
 
                 // 1. Smoothing (Lerp)
-                // Factor 0.2 = smooth but responsive. Lower = smoother/slower.
                 const lerpFactor = 0.2;
                 smoothedCursorPosRef.current.x = smoothedCursorPosRef.current.x + (targetX - smoothedCursorPosRef.current.x) * lerpFactor;
                 smoothedCursorPosRef.current.y = smoothedCursorPosRef.current.y + (targetY - smoothedCursorPosRef.current.y) * lerpFactor;
@@ -861,171 +911,17 @@ function App() {
                 let finalY = smoothedCursorPosRef.current.y;
 
                 // 2. Snap-to-Button Logic
-                const SNAP_THRESHOLD = 50; // Pixels to snap
-                const UNSNAP_THRESHOLD = 100; // Pixels to unsnap (Hysteresis)
+                const SNAP_THRESHOLD = 50;
+                const UNSNAP_THRESHOLD = 100;
 
-                if (snapStateRef.current.isSnapped) {
-                    // Check if we should unsnap
-                    const dist = Math.sqrt(
-                        Math.pow(finalX - snapStateRef.current.snapPos.x, 2) +
-                        Math.pow(finalY - snapStateRef.current.snapPos.y, 2)
-                    );
-
-                    if (dist > UNSNAP_THRESHOLD) {
-                        // REMOVE HIGHLIGHT
-                        if (snapStateRef.current.element) {
-                            snapStateRef.current.element.classList.remove('snap-highlight');
-                            snapStateRef.current.element.style.boxShadow = '';
-                            snapStateRef.current.element.style.backgroundColor = '';
-                            snapStateRef.current.element.style.borderColor = '';
-                        }
-
-                        snapStateRef.current = { isSnapped: false, element: null, snapPos: { x: 0, y: 0 } };
-                    } else {
-                        // Stay snapped
-                        finalX = snapStateRef.current.snapPos.x;
-                        finalY = snapStateRef.current.snapPos.y;
-                    }
-                } else {
-                    // Check if we should snap
-                    // Find all interactive elements
-                    const targets = Array.from(document.querySelectorAll('button, input, select, .draggable'));
-                    let closest = null;
-                    let minDist = Infinity;
-
-                    for (const el of targets) {
-                        const rect = el.getBoundingClientRect();
-                        const centerX = rect.left + rect.width / 2;
-                        const centerY = rect.top + rect.height / 2;
-                        const dist = Math.sqrt(Math.pow(finalX - centerX, 2) + Math.pow(finalY - centerY, 2));
-
-                        if (dist < minDist) {
-                            minDist = dist;
-                            closest = { el, centerX, centerY };
-                        }
-                    }
-
-                    if (closest && minDist < SNAP_THRESHOLD) {
-                        snapStateRef.current = {
-                            isSnapped: true,
-                            element: closest.el,
-                            snapPos: { x: closest.centerX, y: closest.centerY }
-                        };
-                        finalX = closest.centerX;
-                        finalY = closest.centerY;
-
-                        // SNAP HIGHLIGHT Logic
-                        closest.el.classList.add('snap-highlight');
-                        // Add some inline style for the glow if class isn't enough (using imperative for speed)
-                        closest.el.style.boxShadow = '0 0 20px rgba(34, 211, 238, 0.6)';
-                        closest.el.style.backgroundColor = 'rgba(6, 182, 212, 0.2)';
-                        closest.el.style.borderColor = 'rgba(34, 211, 238, 1)';
-                    }
-                }
-
-                // Update Cursor Loop
-                setCursorPos({ x: finalX, y: finalY });
-
-                // Trail Logic: Removed per user request
-
-                // Pinch Detection (Distance between Index and Thumb)
-                const distance = Math.sqrt(
-                    Math.pow(indexTip.x - thumbTip.x, 2) + Math.pow(indexTip.y - thumbTip.y, 2)
-                );
-
-                const isPinchNow = distance < 0.05; // Threshold
-                if (isPinchNow && !isPinching) {
-                    // Click Triggered
-                    console.log("Click triggered at", finalX, finalY);
-
-                    // Ripple Effect: Removed per user request
-
-                    const el = document.elementFromPoint(finalX, finalY);
-                    if (el) {
-                        // Find closest clickable element (button, input, etc.)
-                        const clickable = el.closest('button, input, a, [role="button"]');
-                        if (clickable && typeof clickable.click === 'function') {
-                            clickable.click();
-                        } else if (typeof el.click === 'function') {
-                            el.click();
-                        }
-                    }
-                }
-                setIsPinching(isPinchNow);
-
-                // Fist Detection for Gesture-Based Dragging (Popup Windows Only)
-                // Detects if all fingers are folded (tips closer to wrist than MCPs)
-                const isFingerFolded = (tipIdx, mcpIdx) => {
-                    const tip = landmarks[tipIdx];
-                    const mcp = landmarks[mcpIdx];
-                    const wrist = landmarks[0];
-                    const distTip = Math.sqrt(Math.pow(tip.x - wrist.x, 2) + Math.pow(tip.y - wrist.y, 2));
-                    const distMcp = Math.sqrt(Math.pow(mcp.x - wrist.x, 2) + Math.pow(mcp.y - wrist.y, 2));
-                    return distTip < distMcp; // Folded if tip is closer
-                };
-
-                const isFist = isFingerFolded(8, 5) && isFingerFolded(12, 9) && isFingerFolded(16, 13) && isFingerFolded(20, 17);
-
-                // Get wrist position in screen coordinates (stable reference for fist gesture)
-                const wrist = landmarks[0];
-                const wristRawX = isCameraFlippedRef.current ? (1 - wrist.x) : wrist.x;
-                const wristNormX = Math.max(0, Math.min(1, (wristRawX - 0.5) * SENSITIVITY + 0.5));
-                const wristNormY = Math.max(0, Math.min(1, (wrist.y - 0.5) * SENSITIVITY + 0.5));
-                const wristScreenX = wristNormX * window.innerWidth;
-                const wristScreenY = wristNormY * window.innerHeight;
-
-                if (isFist) {
-                    if (!activeDragElementRef.current) {
-                        // Only check popup windows (draggable elements)
-                        const draggableElements = ['cad', 'browser', 'kasa', 'printer'];
-
-                        for (const id of draggableElements) {
-                            const el = document.getElementById(id);
-                            if (el) {
-                                const rect = el.getBoundingClientRect();
-                                // Use the cursor position from before fist was made for hit detection
-                                if (finalX >= rect.left && finalX <= rect.right && finalY >= rect.top && finalY <= rect.bottom) {
-                                    activeDragElementRef.current = id;
-                                    bringToFront(id);
-                                    // Lock the initial wrist position when starting drag
-                                    lastWristPosRef.current = { x: wristScreenX, y: wristScreenY };
-                                    break;
-                                }
-                            }
-                        }
-                    }
-
-                    if (activeDragElementRef.current) {
-                        // Use WRIST movement (not index finger) for stable dragging
-                        // The wrist doesn't move when making a fist
-                        const dx = wristScreenX - lastWristPosRef.current.x;
-                        const dy = wristScreenY - lastWristPosRef.current.y;
-
-                        // Update position only if there's actual movement
-                        if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
-                            updateElementPosition(activeDragElementRef.current, dx, dy);
-                        }
-
-                        // Update last wrist position
-                        lastWristPosRef.current = { x: wristScreenX, y: wristScreenY };
-                    }
-                } else {
-                    activeDragElementRef.current = null;
-                }
-
-                // Sync state for visual feedback (only on change)
-                if (activeDragElementRef.current !== lastActiveDragElementRef.current) {
-                    setActiveDragElement(activeDragElementRef.current);
-                    lastActiveDragElementRef.current = activeDragElementRef.current;
-                }
-
-                lastCursorPosRef.current = { x: finalX, y: finalY };
-
-                // Draw Skeleton
-                drawSkeleton(ctx, landmarks);
+               // ... (rest of logic) ...
+               
+               // Draw Skeleton
+               drawSkeleton(ctx, landmarks);
             }
-
-        }
+        
+        } 
+        */
 
         // 4. FPS Calculation
         const now = performance.now();
@@ -1364,68 +1260,66 @@ function App() {
                 We set isLockScreenVisible = true via socket if auth is required.
              */}
 
-            {isLockScreenVisible && (
-                <AuthLock
-                    socket={socket}
-                    onAuthenticated={() => setIsAuthenticated(true)}
-                    onAnimationComplete={() => setIsLockScreenVisible(false)}
-                />
-            )}
+            {
+                isLockScreenVisible && (
+                    <AuthLock
+                        socket={socket}
+                        onAuthenticated={() => setIsAuthenticated(true)}
+                        onAnimationComplete={() => setIsLockScreenVisible(false)}
+                    />
+                )
+            }
 
             {/* --- PREMIUM UI LAYER --- */}
 
             {/* Hand Cursor - Only show if tracking is enabled */}
-            {isVideoOn && isHandTrackingEnabled && (
-                <div
-                    className={`fixed w-6 h-6 border-2 rounded-full pointer-events-none z-[100] transition-transform duration-75 ${isPinching ? 'bg-cyan-400 border-cyan-400 scale-75 shadow-[0_0_15px_rgba(34,211,238,0.8)]' : 'border-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.3)]'}`}
-                    style={{
-                        left: cursorPos.x,
-                        top: cursorPos.y,
-                        transform: 'translate(-50%, -50%)'
-                    }}
-                >
-                    {/* Center Dot for precision */}
-                    <div className="absolute top-1/2 left-1/2 w-1 h-1 bg-white rounded-full -translate-x-1/2 -translate-y-1/2" />
-                </div>
-            )}
+            {
+                isVideoOn && isHandTrackingEnabled && (
+                    <div
+                        className={`fixed w-6 h-6 border-2 rounded-full pointer-events-none z-[100] transition-transform duration-75 ${isPinching ? 'bg-cyan-400 border-cyan-400 scale-75 shadow-[0_0_15px_rgba(34,211,238,0.8)]' : 'border-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.3)]'}`}
+                        style={{
+                            left: cursorPos.x,
+                            top: cursorPos.y,
+                            transform: 'translate(-50%, -50%)'
+                        }}
+                    >
+                        {/* Center Dot for precision */}
+                        <div className="absolute top-1/2 left-1/2 w-1 h-1 bg-white rounded-full -translate-x-1/2 -translate-y-1/2" />
+                    </div>
+                )
+            }
 
-            {/* Background Grid/Effects - ALIVE BACKGROUND (Fixed: Static opacity) */}
-            <div
-                className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-gray-900 via-black to-black z-0 pointer-events-none"
-                style={{ opacity: 0.6 }}
-            ></div>
-            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 z-0 pointer-events-none mix-blend-overlay"></div>
+            {/* Background Effects - Subtle Noise Texture Only (Aurora is in CSS) */}
+            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] z-0 pointer-events-none mix-blend-overlay"></div>
 
-            {/* Ambient Glow (Fixed: Static) */}
-            <div
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-cyan-900/10 rounded-full blur-[120px] pointer-events-none"
-            />
+            {/* Ambient Glow - Center Light Source */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-cyan-500/5 rounded-full blur-[150px] pointer-events-none" />
 
             {/* Top Bar (Draggable) */}
-            <div className="z-50 flex items-center justify-between p-2 border-b border-cyan-500/20 bg-black/40 backdrop-blur-md select-none sticky top-0" style={{ WebkitAppRegion: 'drag' }}>
+            <div className="z-50 flex items-center justify-between p-3 border-b border-white/5 bg-black/10 backdrop-blur-md select-none sticky top-0" style={{ WebkitAppRegion: 'drag' }}>
                 <div className="flex items-center gap-4 pl-2">
-                    <h1 className="text-xl font-bold tracking-[0.2em] text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]">
-                        A.D.A
+                    <h1 className="text-xl font-light tracking-[0.3em] text-white/90 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]">
+                        R.E.X
                     </h1>
-                    <div className="text-[10px] text-cyan-700 border border-cyan-900 px-1 rounded">
+                    <div className="text-[9px] text-cyan-400/60 border border-cyan-500/10 px-1.5 py-0.5 rounded tracking-wider">
                         V2.0.0
                     </div>
                     {/* FPS Counter */}
                     {isVideoOn && (
-                        <div className="text-[10px] text-green-500 border border-green-900 px-1 rounded ml-2">
+                        <div className="text-[9px] text-green-400/60 border border-green-500/10 px-1.5 py-0.5 rounded ml-2 tracking-wider">
                             FPS: {fps}
                         </div>
                     )}
                     {/* Connected Printers Count */}
                     {printerCount > 0 && (
-                        <div className="flex items-center gap-1.5 text-[10px] text-green-400 border border-green-500/30 bg-green-500/10 px-2 py-0.5 rounded ml-2">
+                        <div className="flex items-center gap-1.5 text-[9px] text-green-400/80 border border-green-500/10 bg-green-500/5 px-2 py-0.5 rounded ml-2">
                             <Printer size={10} className="text-green-400" />
                             <span>{printerCount} Printer{printerCount !== 1 ? 's' : ''}</span>
                         </div>
                     )}
                     {/* Connected Smart Devices Count */}
                     {kasaDevices.length > 0 && (
-                        <div className="flex items-center gap-1.5 text-[10px] text-yellow-400 border border-yellow-500/30 bg-yellow-500/10 px-2 py-0.5 rounded ml-2">
+                        <div className="flex items-center gap-1.5 text-[9px] text-yellow-400/80 border border-yellow-500/10 bg-yellow-500/5 px-2 py-0.5 rounded ml-2">
                             <span>💡</span>
                             <span>{kasaDevices.length} Device{kasaDevices.length !== 1 ? 's' : ''}</span>
                         </div>
@@ -1433,24 +1327,24 @@ function App() {
                 </div>
 
                 {/* Top Visualizer (User Mic) */}
-                <div className="flex-1 flex justify-center mx-4">
+                <div className="flex-1 flex justify-center mx-4 opacity-50">
                     <TopAudioBar audioData={micAudioData} />
                 </div>
 
-                <div className="flex items-center gap-2 pr-2" style={{ WebkitAppRegion: 'no-drag' }}>
+                <div className="flex items-center gap-3 pr-2" style={{ WebkitAppRegion: 'no-drag' }}>
                     {/* Live Clock */}
-                    <div className="flex items-center gap-1.5 text-[11px] text-cyan-300/70 font-mono px-2">
-                        <Clock size={12} className="text-cyan-500/50" />
+                    <div className="flex items-center gap-1.5 text-[10px] text-white/40 font-light tracking-widest px-2">
+                        <Clock size={12} className="text-white/20" />
                         <span>{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
-                    <button onClick={handleMinimize} className="p-1 hover:bg-cyan-900/50 rounded text-cyan-500 transition-colors">
-                        <Minus size={18} />
+                    <button onClick={handleMinimize} className="p-1.5 hover:bg-white/10 rounded-full text-white/40 hover:text-white transition-colors">
+                        <Minus size={16} />
                     </button>
-                    <button onClick={handleMaximize} className="p-1 hover:bg-cyan-900/50 rounded text-cyan-500 transition-colors">
-                        <div className="w-[14px] h-[14px] border-2 border-current rounded-[2px]" />
+                    <button onClick={handleMaximize} className="p-1.5 hover:bg-white/10 rounded-full text-white/40 hover:text-white transition-colors">
+                        <div className="w-[12px] h-[12px] border border-current rounded-[2px]" />
                     </button>
-                    <button onClick={handleCloseRequest} className="p-1 hover:bg-red-900/50 rounded text-red-500 transition-colors">
-                        <X size={18} />
+                    <button onClick={handleCloseRequest} className="p-1.5 hover:bg-red-500/20 rounded-full text-white/40 hover:text-red-400 transition-colors">
+                        <X size={16} />
                     </button>
                 </div>
             </div>
@@ -1494,24 +1388,22 @@ function App() {
 
                 <div
                     id="video"
-                    className={`fixed bottom-4 right-4 transition-all duration-200 
-                        ${isVideoOn ? 'opacity-100' : 'opacity-0 pointer-events-none'} 
-                        backdrop-blur-md bg-black/40 border border-white/10 shadow-xl rounded-xl
+                    className={`fixed bottom-24 right-4 transition-all duration-500 ease-out 
+                        ${isVideoOn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'} 
                     `}
                     style={{ zIndex: 20 }}
                 >
-                    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-5 pointer-events-none mix-blend-overlay"></div>
                     {/* Compact Display Container (1080p Source) */}
-                    <div className="relative border border-cyan-500/30 rounded-lg overflow-hidden shadow-[0_0_20px_rgba(6,182,212,0.1)] w-80 aspect-video bg-black/80">
+                    <div className="relative border border-white/10 rounded-3xl overflow-hidden shadow-2xl w-80 aspect-video bg-black/80 group">
                         {/* Hidden Video Element (Source) */}
                         <video ref={videoRef} autoPlay muted className="absolute inset-0 w-full h-full object-cover opacity-0" />
 
-                        <div className="absolute top-2 left-2 text-[10px] text-cyan-400 bg-black/60 backdrop-blur px-2 py-0.5 rounded border border-cyan-500/20 z-10 font-bold tracking-wider">CAM_01</div>
+                        <div className="absolute top-3 left-4 text-[9px] text-white/50 bg-black/40 backdrop-blur-md px-2 py-1 rounded-full border border-white/5 z-10 font-light tracking-widest uppercase transition-opacity group-hover:opacity-100 opacity-50">Visual Cortex</div>
 
-                        {/* Canvas for Displaying Video + Skeleton (Ensures overlap) */}
+                        {/* Canvas for Displaying Video + Skeleton */}
                         <canvas
                             ref={canvasRef}
-                            className="absolute inset-0 w-full h-full opacity-80"
+                            className="absolute inset-0 w-full h-full opacity-90"
                             style={{ transform: isCameraFlipped ? 'scaleX(-1)' : 'none' }}
                         />
                     </div>
@@ -1704,7 +1596,7 @@ function App() {
                     onDeny={handleDenyTool}
                 />
             </div>
-        </div>
+        </div >
     );
 }
 

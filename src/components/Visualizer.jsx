@@ -1,80 +1,92 @@
 import React, { useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Visualizer = ({ audioData, isListening, intensity = 0, width = 600, height = 400 }) => {
     const canvasRef = useRef(null);
 
-    // Use a ref for audioData to avoid re-creating the animation loop on every frame
-    const audioDataRef = useRef(audioData);
+    // Refs for animation loop
     const intensityRef = useRef(intensity);
     const isListeningRef = useRef(isListening);
+    const phaseRef = useRef(0); // For breathing animation
 
     useEffect(() => {
-        audioDataRef.current = audioData;
         intensityRef.current = intensity;
         isListeningRef.current = isListening;
-    }, [audioData, intensity, isListening]);
+    }, [intensity, isListening]);
 
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
 
-        // Ensure canvas internal resolution matches display size for sharpness
-        canvas.width = width;
-        canvas.height = height;
-
+        // Set higher resolution for sharpness on retina displays
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
         const ctx = canvas.getContext('2d');
+        ctx.scale(dpr, dpr);
+
         let animationId;
 
         const draw = () => {
-            const w = canvas.width;
-            const h = canvas.height;
+            const w = width; // Logical width
+            const h = height; // Logical height
             const centerX = w / 2;
             const centerY = h / 2;
 
-            // Use current audio data from ref if we were using it for visualization
-            // Currently the effect only uses 'intensity', passed as prop. 
-            // To ensure we aren't re-triggering this effect constantly, we use refs.
+            phaseRef.current += 0.02; // Breathing speed
 
             const currentIntensity = intensityRef.current;
             const currentIsListening = isListeningRef.current;
 
-            const baseRadius = Math.min(w, h) * 0.25;
-            const radius = baseRadius + (currentIntensity * 40);
-
+            // Clear canvas
             ctx.clearRect(0, 0, w, h);
 
-            // Base Circle (Glow)
+            // Base Orb Radius
+            // Breathing when idle, expanding when active
+            const breath = Math.sin(phaseRef.current) * 5;
+            const baseRadius = 80 + (currentIntensity * 60) + (currentIsListening ? 0 : breath);
+
+            // 1. Outer Glow (Soft Halo)
+            const gradient1 = ctx.createRadialGradient(centerX, centerY, baseRadius * 0.5, centerX, centerY, baseRadius * 2.5);
+            gradient1.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
+            gradient1.addColorStop(0.5, 'rgba(255, 255, 255, 0.02)');
+            gradient1.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+            ctx.fillStyle = gradient1;
+            ctx.fillRect(0, 0, w, h);
+
+            // 2. Core Orb (The actual white sphere)
             ctx.beginPath();
-            ctx.arc(centerX, centerY, radius - 10, 0, Math.PI * 2);
-            ctx.strokeStyle = 'rgba(6, 182, 212, 0.1)';
-            ctx.lineWidth = 2;
-            ctx.stroke();
+            ctx.arc(centerX, centerY, baseRadius, 0, Math.PI * 2);
 
-            if (!currentIsListening) {
-                // Idle State: Breathing Circle
-                const time = Date.now() / 1000;
-                const breath = Math.sin(time * 2) * 5;
+            // Ethereal White Core Gradient
+            const gradient2 = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, baseRadius);
+            gradient2.addColorStop(0, 'rgba(255, 255, 255, 0.95)'); // Bright center
+            gradient2.addColorStop(0.4, 'rgba(255, 255, 255, 0.8)');
+            gradient2.addColorStop(0.8, 'rgba(200, 220, 255, 0.4)'); // Slight blue tint at edge
+            gradient2.addColorStop(1, 'rgba(255, 255, 255, 0.1)'); // Fade out
 
+            ctx.fillStyle = gradient2;
+            ctx.fill();
+
+            // 3. Reactive Inner Flare (When Talking)
+            if (currentIsListening && currentIntensity > 0.1) {
+                const flareRadius = baseRadius * (0.5 + currentIntensity);
                 ctx.beginPath();
-                ctx.arc(centerX, centerY, radius + breath, 0, Math.PI * 2);
-                ctx.strokeStyle = 'rgba(34, 211, 238, 0.5)';
-                ctx.lineWidth = 4;
-                ctx.shadowBlur = 20;
-                ctx.shadowColor = '#22d3ee';
-                ctx.stroke();
-                ctx.shadowBlur = 0;
-            } else {
-                // Active State: Just the Circle causing the pulse
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-                ctx.strokeStyle = 'rgba(34, 211, 238, 0.8)';
-                ctx.lineWidth = 4;
-                ctx.shadowBlur = 20;
-                ctx.shadowColor = '#22d3ee';
-                ctx.stroke();
-                ctx.shadowBlur = 0;
+                ctx.arc(centerX, centerY, flareRadius, 0, Math.PI * 2);
+                const flareGrad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, flareRadius);
+                flareGrad.addColorStop(0, 'rgba(180, 220, 255, 0.8)');
+                flareGrad.addColorStop(1, 'rgba(180, 220, 255, 0)');
+                ctx.fillStyle = flareGrad;
+                ctx.fill();
             }
+
+            // 4. Subtle Ring (Saturn-like aesthetic detail)
+            ctx.beginPath();
+            ctx.ellipse(centerX, centerY, baseRadius * 1.8, baseRadius * 0.4, Math.PI / 8, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(255, 255, 255, ${0.1 + (currentIntensity * 0.2)})`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
 
             animationId = requestAnimationFrame(draw);
         };
@@ -84,23 +96,20 @@ const Visualizer = ({ audioData, isListening, intensity = 0, width = 600, height
     }, [width, height]);
 
     return (
-        <div className="relative" style={{ width, height }}>
-            {/* Central Logo/Text */}
-            <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-                <motion.div
-                    animate={{ scale: isListening ? [1, 1.1, 1] : 1 }}
-                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                    className="text-cyan-100 font-bold tracking-widest drop-shadow-[0_0_15px_rgba(34,211,238,0.8)]"
-                    style={{ fontSize: Math.min(width, height) * 0.1 }}
-                >
-                    R.E.X
-                </motion.div>
-            </div>
+        <div className="relative flex items-center justify-center p-10" style={{ width, height }}>
+            {/* Soft background light behind the canvas */}
+            <div className="absolute inset-0 bg-white/5 blur-3xl rounded-full opacity-20 pointer-events-none" />
 
             <canvas
                 ref={canvasRef}
                 style={{ width: '100%', height: '100%' }}
+                className="z-10"
             />
+
+            {/* Minimalist Label */}
+            <div className="absolute bottom-10 text-white/30 font-light tracking-[0.5em] text-xs pointer-events-none uppercase">
+                R.E.X System Active
+            </div>
         </div>
     );
 };
