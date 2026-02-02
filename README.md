@@ -2,157 +2,176 @@
 
 **Advanced System Intelligence, Reimagined.**
 
-![R.E.X. V2 Banner](https://via.placeholder.com/1200x400/0a0a0a/00eeff?text=R.E.X.+V2+-+Advanced+System+Intelligence)
+![R.E.X. V2 Banner](https://via.placeholder.com/1200x400/0a0a0a/00eeff?text=R.E.X.+V2+-+The+Ultimate+AI+Agent)
 
 > **"A digital extension of your will."**
 
-R.E.X. V2 is a cutting-edge, multimodal AI assistant designed to transcend simple chatbots. It is a full-system agent capable of seeing your screen, hearing your voice, controlling your operating system, managing your smart home, and extending its reach to the physical world via a dedicated mobile companion app. Built on the Gemini 2.0 Multimodal Live API, R.E.X. offers industry-leading low latency, "barge-in" interruptibility, and deep contextual awareness.
+R.E.X. V2 is a **Multimodal AI Agent operating system** that bridges the gap between your digital workstation, your smart home, and the physical world. Unlike traditional chatbots that are confined to a text box, R.E.X. lives alongside you—seeing your screen, hearing your environment, and actively controlling devices to execute complex workflows.
+
+Powered by **Google Gemini 2.0 Flash Multimodal Live API**, R.E.X. achieves sub-300ms latency for voice interactions, allowing for natural, "barge-in" conversations that feel truly human.
 
 ---
 
-## 🚀 Key Features
+## 🏗️ System Architecture
 
-### 🧠 Core Intelligence (Gemini 2.0 Flash)
-At the heart of R.E.X. is the Gemini 2.0 model, enabling:
-*   **Multimodal Perception:** R.E.X. sees what you see (screen sharing) and hears what you hear (system audio & mic) in real-time.
-*   **Zero-Latency Interaction:** Conversational turns are instantaneous. No "processing..." delays.
-*   **Barge-In Capable:** Interrupt R.E.X. mid-sentence naturally, just like speaking to a human.
+R.E.X. is built on a modular, event-driven "Brain-Body-Limb" architecture designed for speed and extensibility.
 
-### 🌐 Holographic UI V2
-A stunning, sci-fi inspired interface built with **Electron + React**.
-*   **Glassmorphism Design:** Translucent, blurred windows that float above your desktop.
-*   **Reactive Visualizer:** A central "Orb" that pulses and reacts to voice and system status.
-*   **Scanline Aesthetics:** Retro-futuristic visual effects that make the AI feel "alive."
+### 🧠 The Brain (Backend)
+*   **Core:** Python 3.10+ / FastAPI / AsyncIO
+*   **Intelligence:** Google GenAI SDK (Gemini 2.0 Flash)
+*   **Audio Pipeline:** PyAudio + UDP Streaming for <100ms latency.
+*   **Tool Dispatcher:** Dynamic function calling that routes intent to OS Automation, Web Agents, or Hardware Control.
 
-### 📱 R.E.X. Companion App (Flutter)
-Extend R.E.X. beyond your desk with the custom Android Companion App.
-*   **Two-Way Voice Streaming:** Talk to R.E.X. from anywhere in your house via your phone.
-*   **Secretary Mode:** R.E.X. can answer your phone calls for you, take messages, and even decide if a call is urgent enough to patch through.
-*   **Mobile Vision ("Eye"):** Stream your phone's camera to R.E.X. to show it objects in the real world ("What is this part?").
-*   **Remote Control:** Launch desktop apps, control media, and manage system volume from your phone.
-*   **File Beam:** Instantly transfer files between your phone and desktop with a gesture.
-*   **Universal Clipboard:** Copy text on your desktop, paste it on your phone (and vice-versa).
-*   **Contact Sync & Messaging:** Ask R.E.X. to "Text John on WhatsApp" using your phone's native capabilities.
+### 🧘 The Body (Frontend)
+*   **Framework:** Electron + React + Vite
+*   **Design System:** Custom "Holographic Glass" UI with TailwindCSS.
+*   **Visualizer:** Real-time WebGL audio visualization that reacts to both user input and AI thought.
 
-### 🗂️ Intelligent Project Management
-R.E.X. doesn't just do tasks; it organizes them.
-*   **Project Context:** Create and switch between projects. R.E.X. remembers where files are stored for each specific project.
-*   **Auto-Logging:** All user interactions and key events are logged to the project's history.
+### ✋ The Limb (Mobile Companion)
+*   **Framework:** Flutter (Android)
+*   **Connectivity:** Socket.IO + WebRTC for real-time video/audio streaming.
+*   **Capabilities:** Background Service, Telephony Manager, Hardware Bridge (Sensors, Camera).
 
-### 🏠 Physical World Agency
-R.E.X. isn't stuck in the box.
-*   **Smart Home Control:** Native integration with **TP-Link Kasa** devices. Control lights, plugs, and scenes ("Turn the studio lights to blue").
-*   **3D Printing Overseer:** Integration with **OctoPrint/Moonraker**. R.E.X. can slice STL files, start prints, and monitor progress ("Check on the print").
-*   **Hardware Control:** Manage PC volume, brightness, or even lock the workstation on command.
-
-### 🕵️ Web Intelligence
-*   **Autonomous Web Agents:** R.E.X. can navigate websites to perform complex tasks.
-*   **Smart Search:** Intelligently queries Google, Reddit, or GitHub based on your intent.
-*   **Data Scraping:** Extract structured data (e.g., "Find all manufacturing companies in Chicago") into Excel/CSV.
-
-### 🧬 Self-Evolution
-Experimental "Evolution Agent" capability allows R.E.X. to:
-*   **Detect Gaps:** Realize when it cannot perform a requested task.
-*   **Self-Patch:** Research the necessary Python libraries and write its own tools (`tools.py`) to acquire new skills dynamically.
+```mermaid
+graph TD
+    User((User)) -->|Voice/Video| Mobile[Mobile App (Flutter)]
+    User -->|Voice/Screen| Desktop[Desktop UI (Electron)]
+    
+    Mobile -->|Socket.IO| Server[FastAPI Server (Python)]
+    Desktop -->|Socket.IO| Server
+    
+    subgraph "R.E.X. Core (The Brain)"
+        Server --> AudioLoop[Audio Processing Loop]
+        AudioLoop -->|Live API| Gemini[Gemini 2.0 Flash Model]
+        Gemini -->|Tool Calls| Tools[Tool Manager]
+        
+        Tools -->|Control| OS[OS Automation]
+        Tools -->|Control| Web[Web Agent]
+        Tools -->|Control| IoT[Kasa Smart Home]
+        Tools -->|Control| MobileBridge[Mobile Bridge]
+    end
+    
+    MobileBridge -->|Commands| Mobile
+```
 
 ---
 
-## 🛠️ Installation & Setup
+## 🚀 Key Capabilities
+
+### 1. Multimodal Perception & Interaction
+R.E.X. doesn't just read text; it experiences the world.
+*   **Screen Sight:** "Look at this error code." R.E.X. captures your screen, analyzes the visual context, and provides a fix.
+*   **Mobile Eye:** "What part is this?" Stream your phone's camera to R.E.X. for real-world object analysis.
+*   **Barge-In:** Interrupt R.E.X. mid-sentence to correct or redirect it, just like a real conversation.
+
+### 2. The R.E.X. Companion App (Android)
+A fully native extension of the AI.
+*   **Secretary Mode:** R.E.X. screens incoming calls. It speaks to the caller, takes a message, and notifies you only if urgent.
+*   **Universal Clipboard:** Copy on Desktop ⮕ Paste on Phone (and vice-versa) instantly.
+*   **Telepresence:** Two-way audio allows you to talk to your home (and control your PC) from anywhere.
+*   **File Beam:** Select a file on your phone -> "Beam to PC" -> It appears on your desktop instantly.
+
+### 3. Deep OS Integration
+*   **Window Management:** "Snap this window to the right and open VS Code on the left."
+*   **App Control:** Volume, Brightness, Media Playback, and Application launching.
+*   **Workflow Automation:** Complex multi-step actions like "Organize my downloads folder by date."
+
+### 4. Smart Home & IoT
+*   **TP-Link Kasa:** Native control for smart plugs and bulbs. "Set the studio to focused Blue."
+*   **3D Printing:** Integrated with OctoPrint/Moonraker to monitor prints and detect failures via vision.
+
+### 5. Autonomous Web Agents
+*   **Research:** "Find the top 5 emerging trends in AI agents." R.E.X. browses the web, synthesizes data, and creates a report.
+*   **Scraping:** Extract structured data tables from websites into Excel files automatically.
+
+---
+
+## 🛠️ Technology Stack
+
+| Component | Technology | Version | Usage |
+| :--- | :--- | :--- | :--- |
+| **LLM** | Google Gemini 2.0 | `2.0-flash-exp` | Core Reasoning & Vision |
+| **Backend** | Python | `3.10` | Server Logic |
+| **API** | FastAPI | `0.109` | REST & WebSocket |
+| **Frontend** | React + Electron | `18` / `28` | Desktop GUI |
+| **Mobile** | Flutter | `3.27` | Android Companion |
+| **Comms** | Socket.IO | `4.6` | Realtime Events |
+| **Vision** | OpenCV + MSS | `4.9` | Screen Capture |
+
+---
+
+## � Installation
 
 ### Prerequisites
-*   **OS:** Windows 10/11
-*   **Python:** 3.10+
-*   **Node.js:** v18+
-*   **Android SDK:** (For mobile app build)
-*   **Gemini API Key:** [Get here](https://aistudio.google.com/)
+*   **Windows 10/11** (Linux/Mac support planned)
+*   **Python 3.10+**
+*   **Node.js 18+**
+*   **Android Device** (Android 10+)
+*   **Gemini API Key** (from [Google AI Studio](https://aistudio.google.com/))
 
-### 1. Backend Setup (The "Brain")
-```bash
-# Clone the repository
-git clone https://github.com/RushabhMakim3880/Assistant-Rex-V2.git
-cd Assistant-Rex-V2
+### Part 1: The Brain (Server)
+1.  Clone the repository:
+    ```bash
+    git clone https://github.com/RushabhMakim3880/Assistant-Rex-V2.git
+    cd Assistant-Rex-V2
+    ```
+2.  Set up Python environment:
+    ```bash
+    python -m venv venv
+    .\venv\Scripts\activate
+    pip install -r requirements.txt
+    ```
+3.  Configure API Key:
+    *   Rename `.env.example` to `.env`
+    *   Add your key: `GEMINI_API_KEY=your_key_here`
 
-# Create Virtual Environment
-python -m venv venv
-.\venv\Scripts\activate
+### Part 2: The Body (Desktop UI)
+1.  Install dependencies:
+    ```bash
+    npm install
+    ```
+2.  Run the Development Server:
+    ```bash
+    npm run dev
+    ```
+    *This launches both the Python backend and the Electron window.*
 
-# Install Python Dependencies
-pip install -r requirements.txt
-
-# Configure Environment
-# Rename .env.example to .env and add your GEMINI_API_KEY
-```
-
-### 2. Frontend Setup (The "Face")
-```bash
-# Install Node Dependencies
-npm install
-
-# Start the Application (Backend + Frontend)
-npm run dev
-```
-
-### 3. Mobile Companion Setup (The "Hand")
-```bash
-cd rex_companion
-
-# Install Flutter Dependencies
-flutter pub get
-
-# Connect Android Device via USB (Ensure USB Debugging is ON)
-flutter run --release
-```
-*Note: Ensure your phone and PC are on the same Wi-Fi network initially for discovery.*
-
----
-
-## 📖 Usage Scenarios
-
-### Scenario 1: The "Iron Man" Workflow
-> **User:** "R.E.X., look at this CAD model on my screen. It looks weak."
->
-> **R.E.X. (Viewing Screen):** "I see the stress point on the bracket arm. Shall I run a simulation or suggest a reinforcement rib?"
->
-> **User:** "Suggest a rib."
->
-> **R.E.X.:** *Generates a new STL file and displays it via the Holographic CAD Viewer.* "Here is a reinforced design. sending it to the printer?"
-
-### Scenario 2: The Remote Assistant
-> **User (In Kitchen, via Phone):** "R.E.X., I'm out of milk. Add it to my list."
->
-> **R.E.X.:** "Added. By the way, your 3D print just finished successfully."
->
-> **User:** "Great. Turn off the studio lights."
->
-> **R.E.X.:** *Dims studio lights via Kasa integration.* "Done."
-
-### Scenario 3: Research Automation
-> **User:** "Research the top 5 competitors for 'AI Glass' and save it to an Excel sheet."
->
-> **R.E.X.:** *Deploys Web Scraper Agent.* "Scanning... compiling data... Done. I've saved `competitors.xlsx` to your desktop and opened it for you."
+### Part 3: The Limb (Mobile)
+1.  Navigate to the mobile directory:
+    ```bash
+    cd rex_companion
+    ```
+2.  Connect your Android device via USB and run:
+    ```bash
+    flutter run --release
+    ```
 
 ---
 
-## 🏗️ Architecture
+## � Future Roadmap (Phase 5)
 
-The system follows a modular "Brain-Body-Limb" architecture:
-
-*   **Brain (Backend):** Python/FastAPI server handling Gemini Live API sessions, tool dispatch, and audio processing (`rex_core.py`, `server.py`).
-*   **Body (Frontend):** Electron/React application providing the visual interface, system tray presence, and local media handling.
-*   **Limb (Mobile):** Flutter application serving as a remote sensory extension and controller (`rex_companion`).
-
-Communication is handled via **Socket.IO** for low-latency, bidirectional event streaming.
+*   [ ] **Neural Memory:** Implementation of a Vector Database (Pinecone/Chroma) for indefinite context retention.
+*   [ ] **Local Fallback:** Integration of Llama 3 (via Ollama) for offline functionality.
+*   [ ] **Swarm Mode:** Ability for multiple R.E.X. instances (e.g., Home & Office) to share context.
+*   [ ] **Holographic Hardware:** Porting the visualizer to standalone hardware (e.g., Looking Glass Portrait).
 
 ---
 
-## 🔮 Roadmap
+## 🤝 Contributing
 
-*   [ ] **Hybrid Local/Cloud:** Fallback to local LLM (Llama 3) when offline.
-*   [ ] **Memory V2:** Vector database for long-term recall of user preferences and project history.
-*   [ ] **Vision Automation:** "Watch" the screen and auto-trigger macros based on visual events (e.g., finish notification).
-*   [ ] **Headless Pi Mode:** Run the backend on a Raspberry Pi for 24/7 availability.
+Contributions are welcome! Please open an issue first to discuss what you would like to change.
+1.  Fork the Project
+2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4.  Push to the Branch (`git push origin feature/AmazingFeature`)
+5.  Open a Pull Request
 
 ---
 
-**Created by Rushabh Makim.**
-*Powered by Google Gemini.*
+## 📄 License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+---
+
+**Developed with ❤️ by Rushabh Makim**
