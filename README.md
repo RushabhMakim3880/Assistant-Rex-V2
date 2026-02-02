@@ -34,21 +34,21 @@ R.E.X. is built on a modular, event-driven "Brain-Body-Limb" architecture design
 
 ```mermaid
 graph TD
-    User((User)) -->|Voice/Video| Mobile[Mobile App (Flutter)]
-    User -->|Voice/Screen| Desktop[Desktop UI (Electron)]
+    User((User)) -->|Voice/Video| Mobile["Mobile App (Flutter)"]
+    User -->|Voice/Screen| Desktop["Desktop UI (Electron)"]
     
-    Mobile -->|Socket.IO| Server[FastAPI Server (Python)]
+    Mobile -->|Socket.IO| Server["FastAPI Server (Python)"]
     Desktop -->|Socket.IO| Server
     
     subgraph "R.E.X. Core (The Brain)"
-        Server --> AudioLoop[Audio Processing Loop]
-        AudioLoop -->|Live API| Gemini[Gemini 2.0 Flash Model]
-        Gemini -->|Tool Calls| Tools[Tool Manager]
+        Server --> AudioLoop["Audio Processing Loop"]
+        AudioLoop -->|Live API| Gemini["Gemini 2.0 Flash Model"]
+        Gemini -->|Tool Calls| Tools["Tool Manager"]
         
-        Tools -->|Control| OS[OS Automation]
-        Tools -->|Control| Web[Web Agent]
-        Tools -->|Control| IoT[Kasa Smart Home]
-        Tools -->|Control| MobileBridge[Mobile Bridge]
+        Tools -->|Control| OS["OS Automation"]
+        Tools -->|Control| Web["Web Agent"]
+        Tools -->|Control| IoT["Kasa Smart Home"]
+        Tools -->|Control| MobileBridge["Mobile Bridge"]
     end
     
     MobileBridge -->|Commands| Mobile
