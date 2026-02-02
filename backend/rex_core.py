@@ -2098,6 +2098,19 @@ class AudioLoop:
                                     )
                                     function_responses.append(function_response)
 
+                                elif fc.name == "run_security_tool":
+                                    tool_name = fc.args["tool"]
+                                    tool_args = fc.args["args"]
+                                    print(f"[REX DEBUG] [SEC] Tool Call: '{tool_name}' args='{tool_args}'")
+                                    
+                                    # Forward to handler
+                                    await self.handle_run_security_tool(tool_name, tool_args)
+
+                                    function_response = types.FunctionResponse(
+                                        id=fc.id, name=fc.name, response={"result": "Security tool executed. Output sent to chat."}
+                                    )
+                                    function_responses.append(function_response)
+
                                 elif fc.name == "iterate_cad":
                                     prompt = fc.args["prompt"]
                                     print(f"[REX DEBUG] [TOOL] Tool Call: 'iterate_cad' Prompt='{prompt}'")
