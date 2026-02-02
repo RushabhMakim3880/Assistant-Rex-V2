@@ -115,30 +115,46 @@ A fully native extension of the AI.
 *   **Gemini API Key** (from [Google AI Studio](https://aistudio.google.com/))
 
 ### Part 1: The Brain (Server)
-1.  Clone the repository:
-    ```bash
-    git clone https://github.com/RushabhMakim3880/Assistant-Rex-V2.git
-    cd Assistant-Rex-V2
-    ```
-2.  Set up Python environment:
-    ```bash
-    python -m venv venv
-    .\venv\Scripts\activate
-    pip install -r requirements.txt
-    ```
-3.  Configure API Key:
-    *   Rename `.env.example` to `.env`
-    *   Add your key: `GEMINI_API_KEY=your_key_here`
+
+**1. Clone the repository:**
+```bash
+git clone https://github.com/RushabhMakim3880/Assistant-Rex-V2.git
+cd Assistant-Rex-V2
+```
+
+**2. Set up Python environment:**
+
+#### 🪟 Windows
+```powershell
+python -m venv venv
+.\venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+#### 🐧 Linux (Kali/Ubuntu)
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+# Ensure Nmap is installed for Security Module
+sudo apt install nmap
+```
+
+**3. Configure API Key:**
+*   Rename `.env.example` to `.env`
+*   Add your key: `GEMINI_API_KEY=your_key_here`
 
 ### Part 2: The Body (Desktop UI)
-1.  Install dependencies:
-    ```bash
-    npm install
-    ```
-2.  Run the Development Server:
-    ```bash
-    npm run dev
-    ```
+
+**1. Install dependencies:**
+```bash
+npm install
+```
+
+**2. Run the Development Server:**
+```bash
+npm run dev
+```
     *This launches both the Python backend and the Electron window.*
 
 ### Part 3: The Limb (Mobile)
