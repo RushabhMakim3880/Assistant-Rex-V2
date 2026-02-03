@@ -80,12 +80,22 @@ A fully native extension of the AI.
 *   **TP-Link Kasa:** Native control for smart plugs and bulbs. "Set the studio to focused Blue."
 *   **3D Printing:** Integrated with OctoPrint/Moonraker to monitor prints and detect failures via vision.
 
-### 5. Security & Pentesting
-*   **Kali Linux Compatible:** Native shell execution (Bash/PowerShell).
-*   **Network Tools:** Nmap scanning, Whois lookups, and Netstat monitoring.
-*   **Security Agent:** Dedicated module for security auditing and recon.
+### 5. Cyber-REX (Advanced Security Module)
+**Architecture**: 3-Layer System (Brain, Limbs, Coordinator).
+*   **The Brain (Context Advisor)**: Analyzes target context (ports, tech stack) to recommend *feasible* attacks.
+*   **The Limbs (9 Attack Modules)**:
+    *   **Recon**: Nmap, Sublist3r, Whois.
+    *   **Network**: ARP Spoofing (MITM), Packet Capture.
+    *   **Wireless**: WiFi Scanning, Deauth attacks.
+    *   **Web**: SQL Injection, XSS testing.
+    *   **Credentials**: Hydra-based brute-forcing, Context-aware wordlists.
+    *   **Exploitation**: SearchSploit integration.
+    *   **Payloads**: Reverse Shell generation (Python/Bash).
+    *   **Post-Exploit**: Persistence (Cron), History extraction.
+    *   **PrivEsc**: SUID enumeration.
+*   **Automation**: Auto-installs missing tools (Nmap, Hydra, etc.) on Kali Linux.
 
-### 5. Autonomous Web Agents
+### 6. Autonomous Web Agents
 *   **Research:** "Find the top 5 emerging trends in AI agents." R.E.X. browses the web, synthesizes data, and creates a report.
 *   **Scraping:** Extract structured data tables from websites into Excel files automatically.
 
