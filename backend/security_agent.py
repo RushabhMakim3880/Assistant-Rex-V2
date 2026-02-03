@@ -41,8 +41,25 @@ class SecurityAgent:
         self.post_exploit = PostExploitModule(self.system)
         self.priv_esc = PrivEscModule(self.system)
 
+    def _check_platform(self):
+        """
+        Enforces Strict OS Policy.
+        The full Cyber-REX suite is designed for Kali Linux.
+        """
+        if self.os_type == "Windows":
+             return False, (
+                 "⛔ **Access Denied**: The Cyber-REX Security Modules are strictly authorized for **Kali Linux** environments only.\n"
+                 "Running offensive security tools on Windows is restricted to prevent system instability and policy violations.\n"
+                 "Please switch to a Kali Linux instance to utilize these capabilities."
+             )
+        return True, "OK"
+
     def execute_command(self, command):
         """Legacy wrapper for raw shell execution via SystemControl."""
+        # Note: shell commands themselves might be valid on windows if simple, 
+        # but for this agent we lean towards restriction if it's being used for "Security"
+        # However, for basic shell tool it might be annoying.
+        # Let's keep execute_command open but restrict the *wrappers* below.
         success, output = self.system.execute(command)
         if not success:
             return f"Error: {output}"
@@ -52,6 +69,10 @@ class SecurityAgent:
         """
         High-level function to get AI security advice.
         """
+        # Strict Check
+        is_valid, msg = self._check_platform()
+        if not is_valid: return {"error": msg}
+
         # 1. Collect Context
         sys_ctx = self.context_collector.get_system_context()
         web_ctx = {}
@@ -68,6 +89,10 @@ class SecurityAgent:
 
     # --- Tool Wrappers (Recon Phase) ---
     def run_nmap_scan(self, target, options="-F"):
+        # Strict Check
+        is_valid, msg = self._check_platform()
+        if not is_valid: return msg
+
         # Auto-install check
         if not self.tools.is_installed("nmap"):
             success, msg = self.tools.install_tool("nmap")
@@ -76,15 +101,17 @@ class SecurityAgent:
         return self.execute_command(f"nmap {options} {target}")
 
     def run_netstat(self, options="-an"):
+        # Netstat is a standard utility, we allow it on Windows for debugging connectivity
         if self.os_type == "Windows":
              return self.execute_command(f"netstat {options}")
-        # Linux often uses 'ss' now, but netstat is usually compatible
         return self.execute_command(f"netstat {options}")
 
     def run_whois(self, domain):
+         # Strict Check
+         is_valid, msg = self._check_platform()
+         if not is_valid: return msg
+
          if not self.tools.is_installed("whois"):
-            # On linux it's 'whois', windows might need Sysinternals or similar, 
-            # likely only works on Linux/WSL for now.
              if self.os_type != "Windows":
                  self.tools.install_tool("whois")
          
