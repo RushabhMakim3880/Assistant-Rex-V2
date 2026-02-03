@@ -1,20 +1,20 @@
 import platform
-from .security.system import SystemControl
-from .security.network import NetworkControl
-from .security.tool_manager import ToolManager
-from .security.context import ContextCollector
-from .security.advisor import SecurityAdvisor
+from security.system import SystemControl
+from security.network import NetworkControl
+from security.tool_manager import ToolManager
+from security.context import ContextCollector
+from security.advisor import SecurityAdvisor
 
 # Attack Modules
-from .security.modules.recon import ReconModule
-from .security.modules.network_attacks import NetworkAttackModule
-from .security.modules.wireless import WirelessModule
-from .security.modules.web_attacks import WebAttackModule
-from .security.modules.credentials import CredentialModule
-from .security.modules.exploitation import ExploitModule
-from .security.modules.payloads import PayloadModule
-from .security.modules.post_exploit import PostExploitModule
-from .security.modules.privesc import PrivEscModule
+from security.modules.recon import ReconModule
+from security.modules.network_attacks import NetworkAttackModule
+from security.modules.wireless import WirelessModule
+from security.modules.web_attacks import WebAttackModule
+from security.modules.credentials import CredentialModule
+from security.modules.exploitation import ExploitModule
+from security.modules.payloads import PayloadModule
+from security.modules.post_exploit import PostExploitModule
+from security.modules.privesc import PrivEscModule
 
 class SecurityAgent:
     def __init__(self):
